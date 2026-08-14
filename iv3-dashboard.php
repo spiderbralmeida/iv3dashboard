@@ -33,6 +33,7 @@ add_action( 'wp_dashboard_setup', 'iv3_remove_dashboard_widgets', 99999 );
 
 function iv3_dashboard_assets( $hook ) {
     if ( $hook !== 'index.php' ) return;
+    if ( ! current_user_can( 'manage_options' ) ) return;
     wp_enqueue_style( 'iv3-dash', IV3_DASH_URL . 'assets/dashboard.css', [], IV3_DASH_VERSION );
     wp_enqueue_script( 'iv3-dash', IV3_DASH_URL . 'assets/dashboard.js', [ 'jquery' ], IV3_DASH_VERSION, true );
     wp_localize_script( 'iv3-dash', 'iv3Data', [
@@ -45,6 +46,7 @@ add_action( 'admin_enqueue_scripts', 'iv3_dashboard_assets' );
 
 function iv3_inject_dashboard() {
     if ( ! ( $s = get_current_screen() ) || $s->id !== 'dashboard' ) return;
+    if ( ! current_user_can( 'manage_options' ) ) return;
     include IV3_DASH_DIR . 'templates/dashboard.php';
 }
 add_action( 'admin_notices', 'iv3_inject_dashboard', 1 );
@@ -78,6 +80,7 @@ function iv3_clean_title( $post ) {
 /* ── AJAX: stats ── */
 function iv3_ajax_stats() {
     check_ajax_referer( 'iv3_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( null, 403 );
     $pages = wp_count_posts('page');
     $posts = wp_count_posts('post');
     $users = count_users();
@@ -107,6 +110,7 @@ add_action( 'wp_ajax_iv3_stats', 'iv3_ajax_stats' );
 /* ── AJAX: posts recentes ── */
 function iv3_ajax_posts() {
     check_ajax_referer( 'iv3_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( null, 403 );
     $items = get_posts(['numberposts'=>6,'post_status'=>'any','orderby'=>'date','order'=>'DESC']);
     wp_send_json_success(array_map(function($p){
         return [
@@ -122,6 +126,7 @@ add_action( 'wp_ajax_iv3_posts', 'iv3_ajax_posts' );
 /* ── AJAX: paginas recentes ── */
 function iv3_ajax_pages() {
     check_ajax_referer( 'iv3_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( null, 403 );
     $items = get_posts(['numberposts'=>6,'post_type'=>'page','post_status'=>'any','orderby'=>'modified','order'=>'DESC']);
     wp_send_json_success(array_map(function($p){
         return [
@@ -137,6 +142,7 @@ add_action( 'wp_ajax_iv3_pages', 'iv3_ajax_pages' );
 /* ── AJAX: produtos recentes ── */
 function iv3_ajax_products() {
     check_ajax_referer( 'iv3_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( null, 403 );
     if ( ! class_exists('WooCommerce') ) { wp_send_json_success([]); return; }
     $items = get_posts(['numberposts'=>6,'post_type'=>'product','post_status'=>'any','orderby'=>'modified','order'=>'DESC']);
     wp_send_json_success(array_map(function($p){
