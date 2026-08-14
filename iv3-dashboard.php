@@ -5,7 +5,7 @@
  * Description: Substitui o painel padrao do WordPress por um dashboard moderno iv3.
  * Version:     1.8.1
  * Author:      iv3 - Interatividade Virtual
- * License:     GPL2
+ * License:     MIT
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
