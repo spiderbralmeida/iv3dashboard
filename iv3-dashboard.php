@@ -3,16 +3,24 @@
  * Plugin Name: iv3 Dashboard
  * Plugin URI:  https://iv3.com.br
  * Description: Substitui o painel padrao do WordPress por um dashboard moderno iv3.
- * Version:     1.8.0
+ * Version:     1.8.1
  * Author:      iv3 - Interatividade Virtual
  * License:     GPL2
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'IV3_DASH_VERSION', '1.8.0' );
+define( 'IV3_DASH_VERSION', '1.8.1' );
 define( 'IV3_DASH_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IV3_DASH_URL', plugin_dir_url( __FILE__ ) );
+
+/* ── Auto-update via GitHub Releases ── */
+require IV3_DASH_DIR . 'vendor/plugin-update-checker/plugin-update-checker.php';
+\YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+    'https://github.com/spiderbralmeida/iv3dashboard/',
+    __FILE__,
+    'iv3-dashboard'
+);
 
 function iv3_remove_dashboard_widgets() {
     global $wp_meta_boxes;
