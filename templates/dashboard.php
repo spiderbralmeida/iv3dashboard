@@ -6,8 +6,9 @@ $hora     = intval( date('H') );
 $saudacao = $hora < 12 ? 'Bom dia' : ( $hora < 18 ? 'Boa tarde' : 'Boa noite' );
 $has_woo  = class_exists('WooCommerce');
 $has_estatik = post_type_exists('properties');
-// Classe do body: 4 colunas com Woo, 3 sem
-$body_class = $has_woo ? 'iv3-body iv3-cols-4' : 'iv3-body iv3-cols-3';
+// Colunas do body: 3 base (Posts, Páginas, Ações rápidas) +1 com Woo (Produtos) +1 com Estatik (Imóveis)
+$body_cols  = 3 + ( $has_woo ? 1 : 0 ) + ( $has_estatik ? 1 : 0 );
+$body_class = 'iv3-body iv3-cols-' . $body_cols;
 ?>
 <div id="iv3db">
 
@@ -65,9 +66,16 @@ $body_class = $has_woo ? 'iv3-body iv3-cols-4' : 'iv3-body iv3-cols-3';
       <a href="<?php echo admin_url('admin.php?page=wc-reports'); ?>" class="iv3-sa"><?php echo iv3_arr(); ?></a>
     </div>
     <?php endif; ?>
+    <?php if ( $has_estatik ) : ?>
+    <div class="iv3-stat iv3-c-orange">
+      <div class="iv3-si"><?php echo iv3_ico('property'); ?></div>
+      <div class="iv3-sb"><div class="iv3-sn" id="sn-properties">-</div><div class="iv3-sl">Imóveis</div></div>
+      <a href="<?php echo admin_url('edit.php?post_type=properties'); ?>" class="iv3-sa"><?php echo iv3_arr(); ?></a>
+    </div>
+    <?php endif; ?>
   </section>
 
-  <!-- Body: 4 cols com Woo / 3 cols sem Woo -->
+  <!-- Body: colunas dinâmicas conforme plugins ativos -->
   <div class="<?php echo $body_class; ?>">
 
     <!-- Posts -->
@@ -105,6 +113,20 @@ $body_class = $has_woo ? 'iv3-body iv3-cols-4' : 'iv3-body iv3-cols-3';
         </div>
       </div>
       <div id="iv3-products" class="iv3-list"><div class="iv3-skel"><s></s><s></s><s></s><s></s></div></div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Imóveis: só aparece se tiver Estatik -->
+    <?php if ( $has_estatik ) : ?>
+    <div class="iv3-card">
+      <div class="iv3-ch">
+        <span class="iv3-ct">Imóveis recentes</span>
+        <div class="iv3-ca">
+          <a href="<?php echo admin_url('edit.php?post_type=properties'); ?>" class="iv3-lnk">Ver todos</a>
+          <a href="<?php echo admin_url('post-new.php?post_type=properties'); ?>" class="iv3-new">+ Novo</a>
+        </div>
+      </div>
+      <div id="iv3-properties" class="iv3-list"><div class="iv3-skel"><s></s><s></s><s></s><s></s></div></div>
     </div>
     <?php endif; ?>
 
