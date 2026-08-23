@@ -3,14 +3,14 @@
  * Plugin Name: iv3 Dashboard
  * Plugin URI:  https://iv3.com.br
  * Description: Substitui o painel padrao do WordPress por um dashboard moderno iv3.
- * Version:     1.8.2
+ * Version:     1.9.0
  * Author:      iv3 - Interatividade Virtual
  * License:     MIT
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'IV3_DASH_VERSION', '1.8.2' );
+define( 'IV3_DASH_VERSION', '1.9.0' );
 define( 'IV3_DASH_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IV3_DASH_URL', plugin_dir_url( __FILE__ ) );
 
@@ -92,8 +92,13 @@ function iv3_ajax_stats() {
     $pages = wp_count_posts('page');
     $posts = wp_count_posts('post');
     $users = count_users();
-    $products = $orders = $revenue = 0;
+    $products = $orders = $revenue = $properties = 0;
     $has_woo = class_exists('WooCommerce');
+    $has_estatik = post_type_exists('properties');
+    if ( $has_estatik ) {
+        $prop_counts = wp_count_posts('properties');
+        $properties = intval($prop_counts->publish);
+    }
     if ( $has_woo ) {
         $wcp = wp_count_posts('product');
         $products = intval($wcp->publish);
@@ -116,6 +121,8 @@ function iv3_ajax_stats() {
         'orders'     => $orders,
         'revenue'    => number_format($revenue,2,',','.'),
         'has_woo'    => $has_woo,
+        'properties' => $properties,
+        'has_estatik'=> $has_estatik,
         'wp_version' => get_bloginfo('version'),
         'php_version'=> PHP_VERSION,
     ]);
@@ -170,3 +177,20 @@ function iv3_ajax_products() {
     }, $items));
 }
 add_action( 'wp_ajax_iv3_products', 'iv3_ajax_products' );
+
+/* ── AJAX: imoveis recentes (Estatik) ── */
+function iv3_ajax_properties() {
+    check_ajax_referer( 'iv3_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( null, 403 );
+    if ( ! post_type_exists('properties') ) { wp_send_json_success([]); return; }
+    $items = get_posts(['numberposts'=>6,'post_type'=>'properties','post_status'=>'any','orderby'=>'modified','order'=>'DESC']);
+    wp_send_json_success(array_map(function($p){
+        return [
+            'title' => html_entity_decode( get_the_title($p), ENT_QUOTES | ENT_HTML5, 'UTF-8' ),
+            'status'=> get_post_status($p),
+            'date'  => get_the_date('d/m/Y',$p),
+            'link'  => admin_url('post.php?post=' . $p->ID . '&action=edit'),
+        ];
+    }, $items));
+}
+add_action( 'wp_ajax_iv3_properties', 'iv3_ajax_properties' );

@@ -5,8 +5,10 @@ $nome     = $user->first_name ?: $user->display_name;
 $hora     = intval( date('H') );
 $saudacao = $hora < 12 ? 'Bom dia' : ( $hora < 18 ? 'Boa tarde' : 'Boa noite' );
 $has_woo  = class_exists('WooCommerce');
-// Classe do body: 4 colunas com Woo, 3 sem
-$body_class = $has_woo ? 'iv3-body iv3-cols-4' : 'iv3-body iv3-cols-3';
+$has_estatik = post_type_exists('properties');
+// Colunas do body: 3 base (Posts, Páginas, Ações rápidas) +1 com Woo (Produtos) +1 com Estatik (Imóveis)
+$body_cols  = 3 + ( $has_woo ? 1 : 0 ) + ( $has_estatik ? 1 : 0 );
+$body_class = 'iv3-body iv3-cols-' . $body_cols;
 ?>
 <div id="iv3db">
 
@@ -64,9 +66,16 @@ $body_class = $has_woo ? 'iv3-body iv3-cols-4' : 'iv3-body iv3-cols-3';
       <a href="<?php echo admin_url('admin.php?page=wc-reports'); ?>" class="iv3-sa"><?php echo iv3_arr(); ?></a>
     </div>
     <?php endif; ?>
+    <?php if ( $has_estatik ) : ?>
+    <div class="iv3-stat iv3-c-orange">
+      <div class="iv3-si"><?php echo iv3_ico('property'); ?></div>
+      <div class="iv3-sb"><div class="iv3-sn" id="sn-properties">-</div><div class="iv3-sl">Imóveis</div></div>
+      <a href="<?php echo admin_url('edit.php?post_type=properties'); ?>" class="iv3-sa"><?php echo iv3_arr(); ?></a>
+    </div>
+    <?php endif; ?>
   </section>
 
-  <!-- Body: 4 cols com Woo / 3 cols sem Woo -->
+  <!-- Body: colunas dinâmicas conforme plugins ativos -->
   <div class="<?php echo $body_class; ?>">
 
     <!-- Posts -->
@@ -107,6 +116,20 @@ $body_class = $has_woo ? 'iv3-body iv3-cols-4' : 'iv3-body iv3-cols-3';
     </div>
     <?php endif; ?>
 
+    <!-- Imóveis: só aparece se tiver Estatik -->
+    <?php if ( $has_estatik ) : ?>
+    <div class="iv3-card">
+      <div class="iv3-ch">
+        <span class="iv3-ct">Imóveis recentes</span>
+        <div class="iv3-ca">
+          <a href="<?php echo admin_url('edit.php?post_type=properties'); ?>" class="iv3-lnk">Ver todos</a>
+          <a href="<?php echo admin_url('post-new.php?post_type=properties'); ?>" class="iv3-new">+ Novo</a>
+        </div>
+      </div>
+      <div id="iv3-properties" class="iv3-list"><div class="iv3-skel"><s></s><s></s><s></s><s></s></div></div>
+    </div>
+    <?php endif; ?>
+
     <!-- Ações rápidas -->
     <div class="iv3-card">
       <div class="iv3-ch"><span class="iv3-ct">Ações rápidas</span></div>
@@ -117,6 +140,10 @@ $body_class = $has_woo ? 'iv3-body iv3-cols-4' : 'iv3-body iv3-cols-3';
         <?php if ( $has_woo ) : ?>
         <a href="<?php echo admin_url('post-new.php?post_type=product'); ?>" class="iv3-tile"><?php echo iv3_ico('product'); ?><span>Produto</span></a>
         <a href="<?php echo admin_url('edit.php?post_type=shop_order'); ?>" class="iv3-tile"><?php echo iv3_ico('orders'); ?><span>Pedidos</span></a>
+        <?php endif; ?>
+        <?php if ( $has_estatik ) : ?>
+        <a href="<?php echo admin_url('post-new.php?post_type=properties'); ?>" class="iv3-tile"><?php echo iv3_ico('property'); ?><span>Novo Imóvel</span></a>
+        <a href="<?php echo admin_url('edit.php?post_type=properties'); ?>" class="iv3-tile"><?php echo iv3_ico('property'); ?><span>Imóveis</span></a>
         <?php endif; ?>
         <a href="<?php echo admin_url('themes.php'); ?>" class="iv3-tile"><?php echo iv3_ico('theme'); ?><span>Aparência</span></a>
         <a href="<?php echo admin_url('plugins.php'); ?>" class="iv3-tile"><?php echo iv3_ico('plugin'); ?><span>Plugins</span></a>
@@ -141,6 +168,7 @@ function iv3_ico($n){
     'post'    =>'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
     'users'   =>'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     'product' =>'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+    'property'=>'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>',
     'orders'  =>'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
     'revenue' =>'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
     'media'   =>'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',

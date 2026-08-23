@@ -81,6 +81,8 @@ a { text-decoration: none; }
 .iv3-c-emerald::after  { background: var(--emerald); }
 .iv3-c-cyan    .iv3-si { background: rgba(6,182,212,.14); color: var(--cyan); }
 .iv3-c-cyan::after     { background: var(--cyan); }
+.iv3-c-orange  .iv3-si { background: rgba(249,115,22,.14); color: var(--orange); }
+.iv3-c-orange::after   { background: var(--orange); }
 
 .iv3-si { width: 40px; height: 40px; border-radius: var(--rs); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .iv3-sb { flex: 1; min-width: 0; }
@@ -97,12 +99,18 @@ a { text-decoration: none; }
     align-items: stretch;
 }
 
-/* Com WooCommerce: 4 colunas */
+/* Com Woo + Estatik: 5 colunas */
+.iv3-cols-5 { grid-template-columns: repeat(5, 1fr); }
+@media(max-width:1400px){ .iv3-cols-5 { grid-template-columns: repeat(3,1fr); } }
+@media(max-width:1000px){ .iv3-cols-5 { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:700px)  { .iv3-cols-5 { grid-template-columns: 1fr; } }
+
+/* Com Woo ou Estatik: 4 colunas */
 .iv3-cols-4 { grid-template-columns: repeat(4, 1fr); }
 @media(max-width:1200px){ .iv3-cols-4 { grid-template-columns: repeat(2,1fr); } }
 @media(max-width:700px)  { .iv3-cols-4 { grid-template-columns: 1fr; } }
 
-/* Sem WooCommerce: 3 colunas */
+/* Sem Woo nem Estatik: 3 colunas */
 .iv3-cols-3 { grid-template-columns: repeat(3, 1fr); }
 @media(max-width:1000px){ .iv3-cols-3 { grid-template-columns: repeat(2,1fr); } }
 @media(max-width:700px)  { .iv3-cols-3 { grid-template-columns: 1fr; } }

@@ -26,16 +26,19 @@ var emptyIcons = {
     'iv3-posts':    '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
     'iv3-pages':    '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
     'iv3-products': '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+    'iv3-properties': '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>',
 };
 var emptyLinks = {
     'iv3-posts':    iv3Data.adminUrl + 'post-new.php',
     'iv3-pages':    iv3Data.adminUrl + 'post-new.php?post_type=page',
     'iv3-products': iv3Data.adminUrl + 'post-new.php?post_type=product',
+    'iv3-properties': iv3Data.adminUrl + 'post-new.php?post_type=properties',
 };
 var emptyLabels = {
     'iv3-posts':    ['Nenhum post ainda', 'Criar primeiro post'],
     'iv3-pages':    ['Nenhuma página ainda', 'Criar primeira página'],
     'iv3-products': ['Nenhum produto ainda', 'Criar primeiro produto'],
+    'iv3-properties': ['Nenhum imóvel ainda', 'Criar primeiro imóvel'],
 };
 
 /* ── Render list ── */
@@ -81,6 +84,9 @@ $(function(){
             countUp('sn-orders',d.orders);
             $('#sn-revenue').text('R$ '+d.revenue);
         }
+        if(d.has_estatik){
+            countUp('sn-properties',d.properties);
+        }
         $('#iv3sys').text('WP '+d.wp_version+' | PHP '+d.php_version);
     });
 
@@ -98,6 +104,13 @@ $(function(){
     if($('#iv3-products').length){
         $.post(iv3Data.ajaxUrl,{action:'iv3_products',nonce:iv3Data.nonce},function(r){
             if(r.success) renderList('iv3-products',r.data);
+        });
+    }
+
+    /* Imóveis */
+    if($('#iv3-properties').length){
+        $.post(iv3Data.ajaxUrl,{action:'iv3_properties',nonce:iv3Data.nonce},function(r){
+            if(r.success) renderList('iv3-properties',r.data);
         });
     }
 });
