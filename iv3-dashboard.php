@@ -3,14 +3,14 @@
  * Plugin Name: iv3 Dashboard
  * Plugin URI:  https://iv3.com.br
  * Description: Substitui o painel padrao do WordPress por um dashboard moderno iv3.
- * Version:     1.8.1
+ * Version:     1.8.2
  * Author:      iv3 - Interatividade Virtual
  * License:     MIT
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'IV3_DASH_VERSION', '1.8.1' );
+define( 'IV3_DASH_VERSION', '1.8.2' );
 define( 'IV3_DASH_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IV3_DASH_URL', plugin_dir_url( __FILE__ ) );
 
@@ -97,9 +97,16 @@ function iv3_ajax_stats() {
     if ( $has_woo ) {
         $wcp = wp_count_posts('product');
         $products = intval($wcp->publish);
-        $ords = wc_get_orders(['limit'=>-1,'status'=>['wc-completed','wc-processing'],'date_created'=>'>'.strtotime('-30 days')]);
-        $orders = count($ords);
-        foreach($ords as $o) $revenue += floatval($o->get_total());
+        $woo_stats = get_transient('iv3_dash_woo_stats');
+        if ( false === $woo_stats ) {
+            $ords = wc_get_orders(['limit'=>-1,'status'=>['wc-completed','wc-processing'],'date_created'=>'>'.strtotime('-30 days')]);
+            $woo_revenue = 0;
+            foreach($ords as $o) $woo_revenue += floatval($o->get_total());
+            $woo_stats = [ 'orders' => count($ords), 'revenue' => $woo_revenue ];
+            set_transient('iv3_dash_woo_stats', $woo_stats, 15 * MINUTE_IN_SECONDS);
+        }
+        $orders  = $woo_stats['orders'];
+        $revenue = $woo_stats['revenue'];
     }
     wp_send_json_success([
         'pages'      => intval($pages->publish),
