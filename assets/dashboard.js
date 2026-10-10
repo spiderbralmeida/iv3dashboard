@@ -81,8 +81,12 @@ $(function(){
         if(d.has_woo){
             $('.iv3-woo').show();
             countUp('sn-products',d.products);
-            countUp('sn-orders',d.orders);
-            $('#sn-revenue').text('R$ '+d.revenue);
+            /* Pedidos/receita vêm de uma requisição própria: não atrasam os demais cards */
+            $.post(iv3Data.ajaxUrl,{action:'iv3_woo_stats',nonce:iv3Data.nonce},function(w){
+                if(!w.success) return;
+                countUp('sn-orders',w.data.orders);
+                $('#sn-revenue').text('R$ '+w.data.revenue);
+            });
         }
         if(d.has_estatik){
             countUp('sn-properties',d.properties);
