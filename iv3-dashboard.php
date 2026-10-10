@@ -3,14 +3,14 @@
  * Plugin Name: iv3 Dashboard
  * Plugin URI:  https://iv3.com.br
  * Description: Substitui o painel padrao do WordPress por um dashboard moderno iv3.
- * Version:     1.9.0
+ * Version:     1.9.1
  * Author:      iv3 - Interatividade Virtual
  * License:     MIT
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'IV3_DASH_VERSION', '1.9.0' );
+define( 'IV3_DASH_VERSION', '1.9.1' );
 define( 'IV3_DASH_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IV3_DASH_URL', plugin_dir_url( __FILE__ ) );
 
@@ -85,14 +85,49 @@ function iv3_clean_title( $post ) {
     return html_entity_decode( get_the_title( $post ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 }
 
-/* ── AJAX: stats ── */
+/* ── Pedidos Woo dos últimos 30 dias: COUNT/SUM direto no banco ──
+   Uma única query agregada (HPOS ou tabela de posts legada), sem carregar
+   cada pedido como objeto PHP. */
+function iv3_woo_order_stats() {
+    global $wpdb;
+    $since    = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
+    $statuses = [ 'wc-completed', 'wc-processing' ];
+    $in       = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+    $args     = array_merge( $statuses, [ $since ] );
+    $hpos     = class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' )
+                && \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+    if ( $hpos ) {
+        $table = $wpdb->prefix . 'wc_orders';
+        $sql   = $wpdb->prepare(
+            "SELECT COUNT(*) AS orders, COALESCE(SUM(total_amount),0) AS revenue
+             FROM {$table}
+             WHERE type = 'shop_order' AND status IN ($in) AND date_created_gmt >= %s",
+            $args
+        );
+    } else {
+        $sql = $wpdb->prepare(
+            "SELECT COUNT(p.ID) AS orders, COALESCE(SUM(CAST(pm.meta_value AS DECIMAL(20,2))),0) AS revenue
+             FROM {$wpdb->posts} p
+             LEFT JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_order_total'
+             WHERE p.post_type = 'shop_order' AND p.post_status IN ($in) AND p.post_date_gmt >= %s",
+            $args
+        );
+    }
+    $row = $wpdb->get_row( $sql );
+    return [
+        'orders'  => $row ? intval( $row->orders ) : 0,
+        'revenue' => $row ? floatval( $row->revenue ) : 0,
+    ];
+}
+
+/* ── AJAX: stats (só contagens baratas) ── */
 function iv3_ajax_stats() {
     check_ajax_referer( 'iv3_nonce', 'nonce' );
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( null, 403 );
     $pages = wp_count_posts('page');
     $posts = wp_count_posts('post');
     $users = count_users();
-    $products = $orders = $revenue = $properties = 0;
+    $products = $properties = 0;
     $has_woo = class_exists('WooCommerce');
     $has_estatik = post_type_exists('properties');
     if ( $has_estatik ) {
@@ -102,24 +137,12 @@ function iv3_ajax_stats() {
     if ( $has_woo ) {
         $wcp = wp_count_posts('product');
         $products = intval($wcp->publish);
-        $woo_stats = get_transient('iv3_dash_woo_stats');
-        if ( false === $woo_stats ) {
-            $ords = wc_get_orders(['limit'=>-1,'status'=>['wc-completed','wc-processing'],'date_created'=>'>'.strtotime('-30 days')]);
-            $woo_revenue = 0;
-            foreach($ords as $o) $woo_revenue += floatval($o->get_total());
-            $woo_stats = [ 'orders' => count($ords), 'revenue' => $woo_revenue ];
-            set_transient('iv3_dash_woo_stats', $woo_stats, 15 * MINUTE_IN_SECONDS);
-        }
-        $orders  = $woo_stats['orders'];
-        $revenue = $woo_stats['revenue'];
     }
     wp_send_json_success([
         'pages'      => intval($pages->publish),
         'posts'      => intval($posts->publish),
         'users'      => intval($users['total_users']),
         'products'   => $products,
-        'orders'     => $orders,
-        'revenue'    => number_format($revenue,2,',','.'),
         'has_woo'    => $has_woo,
         'properties' => $properties,
         'has_estatik'=> $has_estatik,
@@ -128,6 +151,25 @@ function iv3_ajax_stats() {
     ]);
 }
 add_action( 'wp_ajax_iv3_stats', 'iv3_ajax_stats' );
+
+/* ── AJAX: pedidos/receita Woo (requisição separada, com cache de 15min) ── */
+function iv3_ajax_woo_stats() {
+    check_ajax_referer( 'iv3_nonce', 'nonce' );
+    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( null, 403 );
+    $woo_stats = [ 'orders' => 0, 'revenue' => 0 ];
+    if ( class_exists('WooCommerce') ) {
+        $woo_stats = get_transient('iv3_dash_woo_stats');
+        if ( false === $woo_stats ) {
+            $woo_stats = iv3_woo_order_stats();
+            set_transient('iv3_dash_woo_stats', $woo_stats, 15 * MINUTE_IN_SECONDS);
+        }
+    }
+    wp_send_json_success([
+        'orders'  => $woo_stats['orders'],
+        'revenue' => number_format($woo_stats['revenue'],2,',','.'),
+    ]);
+}
+add_action( 'wp_ajax_iv3_woo_stats', 'iv3_ajax_woo_stats' );
 
 /* ── AJAX: posts recentes ── */
 function iv3_ajax_posts() {
